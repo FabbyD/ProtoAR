@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OCV Color Blob Detection</string>
+
+    <!-- Permissions -->
+    <string name="settings">Settings</string>
+    <string name="permission_denied_explanation">
+        Permissions are required for this app to work.
+        You can set them in the app\'s settings later.
+    </string>
+    <string name="permission_rationale">
+        Permissions are required for this app to work. Click here to set them.
+    </string>
+    <string name="ok">Ask again</string>
+</resources>

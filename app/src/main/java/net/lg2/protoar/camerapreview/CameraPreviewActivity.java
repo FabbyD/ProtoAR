@@ -7,22 +7,30 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import net.lg2.protoar.R;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CameraPreviewActivity extends Activity implements CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
 
     private CameraBridgeViewBase mOpenCvCameraView;
-    private boolean              mIsJavaCamera = true;
-    private MenuItem             mItemSwitchCamera = null;
+    private Mat mGray;
+    private Mat mEdges;
+    private List<MatOfPoint> mContours;
+    private Mat mHierarchy;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -52,7 +60,7 @@ public class CameraPreviewActivity extends Activity implements CvCameraViewListe
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        setContentView(R.layout.tutorial1_surface_view);
+        setContentView(R.layout.activity_camera_preview);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial1_activity_java_surface_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
@@ -93,6 +101,40 @@ public class CameraPreviewActivity extends Activity implements CvCameraViewListe
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        return inputFrame.rgba();
+        // Lazy initialization
+        if (mEdges == null) {
+            mEdges = new Mat();
+        } else {
+            mEdges.empty();
+        }
+        if (mContours == null) {
+            mContours = new ArrayList<>();
+        } else {
+            mContours.clear();
+        }
+        if (mHierarchy == null) {
+            mHierarchy = new Mat();
+        } else {
+            mHierarchy.empty();
+        }
+
+        // Remove some noise
+        mGray = inputFrame.gray();
+        Imgproc.blur(mGray, mEdges, new Size(3, 3));
+
+        // Detect edges using canny
+        double thresh=100;
+        Imgproc.Canny(mEdges, mEdges, thresh, thresh*3, 3, false);
+
+        // Detect contours
+        Imgproc.findContours(mEdges, mContours, mHierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        // if any contour exist...
+        if (mHierarchy.size().height > 0 && mHierarchy.size().width > 0)
+        {
+            Imgproc.drawContours(mGray, mContours, -1, new Scalar(255, 0, 0), 2);
+        }
+
+        return mGray;
     }
 }
